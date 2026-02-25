@@ -71,7 +71,7 @@ fn main() -> ! {
         Err(e) => info!("Error: {}", Debug2Format(&e)),
     }
 
-    match scd41.start_low_power_periodic_measurements() {
+    match scd41.start_periodic_measurement() {
         Ok(_) => info!("measurments started"),
         Err(e) => info!("Measurment faild: {}", Debug2Format(&e))
     }

@@ -14,6 +14,5 @@ pub fn _pulse_led(led: &mut Output<'_>, n: u32) -> () {
         _delay_ms(250);
         led.toggle();
         _delay_ms(250);
-
     }
 }
