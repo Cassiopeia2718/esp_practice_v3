@@ -12,7 +12,6 @@ use esp_hal::gpio::{Output, OutputConfig, Level};
 use esp_hal::clock::CpuClock;
 use esp_hal::{main, delay::Delay,};
 use esp_hal::i2c::master::{Config, I2c};
-use esp_hal::time::{Duration, Instant};
 use esp_hal::timer::timg::TimerGroup;
 use esp_radio::ble::controller::BleConnector;
 use {esp_backtrace as _, esp_println as _};
@@ -49,7 +48,7 @@ fn main() -> ! {
 
 
     // Set GPIO2 as an output, and set its state to high initially.
-    let mut led = Output::new(led_gpio, Level::Low, OutputConfig::default());
+    let mut _led = Output::new(led_gpio, Level::Low, OutputConfig::default());
 
 
     //create i2c
@@ -60,11 +59,6 @@ fn main() -> ! {
 
     //create scd41
     let mut scd41 = Scd4x::new(i2c, Delay::new());
-
-    match scd41.factory_reset() {
-        Ok(_) => info!("Factory Reset!"),
-        Err(e) => info!("Error: {}", Debug2Format(&e)),
-    }
 
     match scd41.self_test_is_ok() {
         Ok(_) => info!("Self Test Ok"),
@@ -92,9 +86,6 @@ fn main() -> ! {
             Err(e) => info!("Measurment Error: {}", Debug2Format(&e)),
         }
         }
-        led.toggle();
-        let delay_start = Instant::now();
-        while delay_start.elapsed() < Duration::from_millis(500) {}
     }
 
     // for inspiration have a look at the examples at https://github.com/esp-rs/esp-hal/tree/esp-hal-v1.0.0/examples
