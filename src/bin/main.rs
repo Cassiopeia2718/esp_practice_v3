@@ -10,7 +10,7 @@
 use defmt::info;
 use esp_hal::gpio::{Output, OutputConfig, Level};
 use esp_hal::clock::CpuClock;
-use esp_hal::{main, delay::Delay,};
+use esp_hal::{main, delay::Delay};
 use esp_hal::i2c::master::{Config, I2c};
 use esp_hal::timer::timg::TimerGroup;
 use esp_radio::ble::controller::BleConnector;
@@ -45,6 +45,9 @@ fn main() -> ! {
     esp_rtos::start(timg0.timer0);
     let radio_init = esp_radio::init().expect("Failed to initialize Wi-Fi/BLE controller");
     let _connector = BleConnector::new(&radio_init, peripherals.BT, Default::default());
+
+
+
 
 
     // Set GPIO2 as an output, and set its state to high initially.
