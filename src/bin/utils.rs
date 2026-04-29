@@ -1,5 +1,4 @@
 #![no_std]
-#![no_main]
 use esp_hal::time::{Duration, Instant};
 use esp_hal::gpio::Output;
 
