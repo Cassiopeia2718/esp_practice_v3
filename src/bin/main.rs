@@ -41,8 +41,8 @@ fn main() -> ! {
     _delay_ms(1000);
 
     let led_gpio = peripherals.GPIO2;
-    let sda_gpio = peripherals.GPIO21;
-    let scl_gpio = peripherals.GPIO22;
+    let sda_gpio = peripherals.GPIO22;
+    let scl_gpio = peripherals.GPIO21;
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
     esp_rtos::start(timg0.timer0);
