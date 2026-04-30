@@ -6,19 +6,21 @@
     holding buffers for the duration of a data transfer."
 )]
 #![deny(clippy::large_stack_frames)]
+#![allow(unused_imports)]
+
 extern crate alloc;
-mod utils;
 use alloc::vec::Vec;
 use defmt::Debug2Format;
 use defmt::info;
 use esp_hal::clock::CpuClock;
 use esp_hal::gpio::{Level, Output, OutputConfig};
-use esp_hal::i2c::master::{Config, I2c};
-use esp_hal::{delay::Delay, main, time::Rate};
+use esp_hal::i2c::master::{Config as i2c_Config, I2c};
+use esp_hal::{delay::Delay, main, time::{Rate, Instant}};
+use esp_hal::uart::{Uart, Config as uart_Config};
+
 use scd4x::Scd4x;
-use {esp_backtrace as _, esp_println as _};
-use utils::_delay_ms;
-use utils::Reading;
+use {esp_backtrace as _, esp_println::println};
+use esp_practice_v3::{_delay_ms, Reading, Status, print_csv};
 
 esp_bootloader_esp_idf::esp_app_desc!();
 
@@ -47,7 +49,7 @@ fn main() -> ! {
     let mut _led = Output::new(led_gpio, Level::Low, OutputConfig::default());
 
     //create i2c
-    let slow_clock = Config::default().with_frequency(Rate::from_khz(10));
+    let slow_clock = i2c_Config::default().with_frequency(Rate::from_khz(10));
     let i2c = I2c::new(peripherals.I2C0, slow_clock)
         .unwrap_or_else(|_| panic!("Failed to initialize I2C"))
         .with_sda(sda_gpio)
@@ -69,28 +71,57 @@ fn main() -> ! {
 
     let mut s = false;
 
-    loop {
-        _delay_ms(100u64); 
-        match scd41.data_ready_status() {
-            Ok(status) => {
-                s = status;
-            }
-            Err(e) => info!("Data ready error: {}", Debug2Format(&e)),
-        }
+    let e_status = Status {
+        recording: false,
+        frequency: 1,
+        start_time_ms: Instant::now().duration_since_epoch().as_millis(),
+    };
 
-        if s {
-            s = false;
-            match scd41.measurement() {    
-                Ok(data) => {
-                    readings.push(Reading {co2: data.co2, temperature: data.temperature, humidity: data.humidity});
-                    info!("CO2: {}", data.co2);
-                    info!("Temp: {}", data.temperature);
-                    info!("Humidity: {}", data.humidity);
-                    
+    let mut uart = Uart::new(peripherals.UART0, uart_Config::default())
+        .unwrap()
+        .with_rx(peripherals.GPIO3)
+        .with_tx(peripherals.GPIO1);
+
+    let buf = [0u8; 64];
+    let pos = 0;
+    let mut single = [0u8; 1];
+
+
+    loop {
+        _delay_ms(1/e_status.frequency as u64);
+        if uart.read_ready() {
+            let mut byte: u8;
+            
+            if uart.read(&mut single).ok().unwrap() > 0 {
+                let byte = single[0];
+                    if byte == b'\n' {
+                        let cmd = core::str::from_utf8(&buf[..pos]).unwrap_or("");
+                        match cmd.trim() {
+                        "DUMP" => print_csv(&readings),
+                        "CLEAR" => readings.clear(),
+                        _ => println!("Unknown command: {}", cmd),
+                    }
                 }
-                Err(e) => info!("Measurment Error: {}", Debug2Format(&e)),
+            };
+
+        if e_status.recording {
+            match scd41.data_ready_status() {
+                Ok(status) => {
+                    s = status;
+                }
+                Err(e) => info!("Data ready error: {}", Debug2Format(&e)),
             }
+
+            if s {
+                s = false;
+                match scd41.measurement() {    
+                    Ok(data) => {
+                        readings.push(Reading {co2: data.co2, temperature: data.temperature, humidity: data.humidity, time: Instant::now().duration_since_epoch().as_millis() - e_status.start_time_ms});            
+                    }
+                    Err(e) => info!("Measurment Error: {}", Debug2Format(&e)),
+                }
+            };
+        };
         }
     }
-
 }
