@@ -20,9 +20,6 @@ use {esp_backtrace as _, esp_println as _};
 use utils::_delay_ms;
 use utils::Reading;
 
-
-// This creates a default app-descriptor required by the esp-idf bootloader.
-// For more information see: <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/app_image_format.html#application-description>
 esp_bootloader_esp_idf::esp_app_desc!();
 
 #[allow(
@@ -32,7 +29,6 @@ esp_bootloader_esp_idf::esp_app_desc!();
 
 #[main]
 fn main() -> ! {
-    // generator version: 1.2.0
 
     let mut readings: Vec<Reading> = Vec::new();
     

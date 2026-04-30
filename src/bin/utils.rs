@@ -31,3 +31,10 @@ pub struct Reading {
     pub temperature: f32,
     pub humidity: f32,
 }
+
+pub struct Status {
+    pub recording: bool,
+    pub frequency: u16,
+    pub collecting_data: bool,
+    pub start_time_ms: u64, 
+}
