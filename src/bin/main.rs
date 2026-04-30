@@ -6,20 +6,20 @@
     holding buffers for the duration of a data transfer."
 )]
 #![deny(clippy::large_stack_frames)]
+extern crate alloc;
 mod utils;
+use alloc::vec::Vec;
 use defmt::Debug2Format;
 use defmt::info;
 use esp_hal::clock::CpuClock;
 use esp_hal::gpio::{Level, Output, OutputConfig};
 use esp_hal::i2c::master::{Config, I2c};
-use esp_hal::timer::timg::TimerGroup;
 use esp_hal::{delay::Delay, main, time::Rate};
-use esp_radio::ble::controller::BleConnector;
 use scd4x::Scd4x;
 use {esp_backtrace as _, esp_println as _};
 use utils::_delay_ms;
+use utils::Reading;
 
-extern crate alloc;
 
 // This creates a default app-descriptor required by the esp-idf bootloader.
 // For more information see: <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/system/app_image_format.html#application-description>
@@ -29,9 +29,12 @@ esp_bootloader_esp_idf::esp_app_desc!();
     clippy::large_stack_frames,
     reason = "it's not unusual to allocate larger buffers etc. in main"
 )]
+
 #[main]
 fn main() -> ! {
     // generator version: 1.2.0
+
+    let mut readings: Vec<Reading> = Vec::new();
     
     let config = esp_hal::Config::default().with_cpu_clock(CpuClock::max());
     let peripherals = esp_hal::init(config);
@@ -43,11 +46,6 @@ fn main() -> ! {
     let led_gpio = peripherals.GPIO2;
     let sda_gpio = peripherals.GPIO22;
     let scl_gpio = peripherals.GPIO21;
-
-    let timg0 = TimerGroup::new(peripherals.TIMG0);
-    esp_rtos::start(timg0.timer0);
-    let radio_init = esp_radio::init().expect("Failed to initialize Wi-Fi/BLE controller");
-    let _connector = BleConnector::new(&radio_init, peripherals.BT, Default::default());
 
     // Set GPIO2 as an output, and set its state to high initially.
     let mut _led = Output::new(led_gpio, Level::Low, OutputConfig::default());
@@ -88,14 +86,15 @@ fn main() -> ! {
             s = false;
             match scd41.measurement() {    
                 Ok(data) => {
+                    readings.push(Reading {co2: data.co2, temperature: data.temperature, humidity: data.humidity});
                     info!("CO2: {}", data.co2);
                     info!("Temp: {}", data.temperature);
-                    info!("Humidity: {}", data.humidity)
+                    info!("Humidity: {}", data.humidity);
+                    
                 }
                 Err(e) => info!("Measurment Error: {}", Debug2Format(&e)),
             }
         }
     }
 
-    // for inspiration have a look at the examples at https://github.com/esp-rs/esp-hal/tree/esp-hal-v1.0.0/examples
 }

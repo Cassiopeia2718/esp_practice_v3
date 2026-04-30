@@ -1,6 +1,9 @@
 #![no_std]
 use esp_hal::time::{Duration, Instant};
 use esp_hal::gpio::Output;
+extern crate alloc;
+use alloc::vec::Vec;
+use esp_println::println;
 
 pub fn _delay_ms(milli: u64) -> () {
     let delay_start = Instant::now();
@@ -14,4 +17,17 @@ pub fn _pulse_led(led: &mut Output<'_>, n: u32) -> () {
         led.toggle();
         _delay_ms(250);
     }
+}
+
+pub fn print_csv(readings: &Vec<Reading>) {
+    println!("co2, temperature, humidity");
+    for r in readings {
+        println!("{},{},{}", r.co2, r.temperature, r.humidity);
+    }
+}
+
+pub struct Reading {
+    pub co2: u16,
+    pub temperature: f32,
+    pub humidity: f32,
 }
