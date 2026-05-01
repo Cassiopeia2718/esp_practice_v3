@@ -75,14 +75,14 @@ fn main() -> ! {
     let mut readings: Vec<Reading> = Vec::new();
 
     let mut e_status = Status {
-        recording: false,
+        recording: true,
         frequency: 1,
         start_time_ms: Instant::now().duration_since_epoch().as_millis(),
     };
 
     /* Loop to run until poweroff*/
     loop {
-        _delay_ms(1/e_status.frequency as u64);
+        _delay_ms(1000/e_status.frequency as u64);
 
         let r = read_command(&mut uart);
         match r {

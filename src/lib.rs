@@ -44,7 +44,7 @@ pub fn read_command(uart: &mut Uart<'_, Blocking>) -> u8 {
 }
 
 pub fn send_data(uart: &mut Uart<'_, Blocking>, p: &mut usize, readings: &Vec<Reading>) -> () {
-    let k: usize = *p;
+    let k: usize = *p - 1;
     if k == readings.len() {return ();}
     for i in k..=readings.len() { 
         let msg = format!("{},{},{},{}", readings[i].co2, readings[i].temperature, readings[i].humidity, readings[i].time);
@@ -64,7 +64,7 @@ pub fn collect_data(readings: &mut Vec<Reading>, e_status: &Status, uart: &mut U
         },
     }
 
-    if !*s { return ();}
+    if !*s {return ();}
     *s = false;
 
     match &scd41.measurement() {    
